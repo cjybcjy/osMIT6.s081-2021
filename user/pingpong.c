@@ -17,10 +17,10 @@ int main(int argc, char* argv[])
         close(pipes2[0]);//child process turn off unneeded sides
         ret1 = read(pipes1[0], buf, 1);
         if (ret1 == -1) {
-            fprintf(2, "%d:read error\n", pid);
+            fprintf(2, "%d: read error\n", pid); // %d is a placeholder
             exit(1);
         } else {
-            printf("%d:received ping\n", pid);
+            printf("%d: received ping\n", pid);
             write(pipes2[1], buf, 1);//write the byte to parent
             exit(0);
         }
@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
             fprintf(2, "read error\n", pid);
             exit(1);
         } else {
-            printf("%d:received pong\n", pid);
+            printf("%d: received pong\n", pid);
             exit(0);
         }
     }
