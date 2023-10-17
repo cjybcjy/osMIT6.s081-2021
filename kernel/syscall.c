@@ -171,7 +171,7 @@ syscall(void)
     p->trapframe->a0 = syscalls[num]();
     if (p->tracemask & (1 << num)){/*(1 << num) creates a number where only the num bit is set, 
     and uses the & operation to check whether the tracemask bit is set*/
-        printf("%d:  syscall %s -> %d\n", p->pid, sysnames[num], p->trapframe->a0);
+        printf("%d: syscall %s -> %d\n", p->pid, sysnames[num], p->trapframe->a0);
     }
   } else {
     printf("%d %s: unknown sys call %d\n",
