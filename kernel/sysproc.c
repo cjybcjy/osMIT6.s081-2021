@@ -105,7 +105,7 @@ uint64 sys_trace(void)
     if (argint(0, &trace_sys_mask) < 0) {// trace_sys_mask = The first argument of the system call
         return -1;
     }
-    myproc() -> tracemask |= trace_sys_mask; /*Bitwise OR with trace_sys_mask. This means that if the user wishes to trace a new system call,
+    (myproc()->tracemask) |= trace_sys_mask; /*Bitwise OR with trace_sys_mask. This means that if the user wishes to trace a new system call,
      the corresponding bit of the system call in tracemask is set.*/
      return 0;
 }

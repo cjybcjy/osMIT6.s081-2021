@@ -198,6 +198,7 @@ UPROGS=\
 	$U/_primes\
 	$U/_find\
 	$U/_xargs\
+	$U/_trace\
 
 
 
@@ -217,7 +218,6 @@ UPROGS += \
 	$U/_lazytests
 endif
 
-<<<<<<< HEAD
 
 ifeq ($(LAB),$(filter $(LAB), pgtbl lock))
 UPROGS += \
@@ -235,8 +235,6 @@ UPROGS += \
 	$U/_lazytests
 endif
 
-=======
->>>>>>> util
 ifeq ($(LAB),cow)
 UPROGS += \
 	$U/_cowtest
