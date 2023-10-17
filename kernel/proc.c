@@ -141,6 +141,7 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  p->tracemask = 0; //initializes the tracemask for new process
   return p;
 }
 
@@ -280,6 +281,9 @@ fork(void)
   if((np = allocproc()) == 0){
     return -1;
   }
+
+  // inherit parent's trace mask
+  np->tracemask = p->tracemask;
 
   // Copy user memory from parent to child.
   if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
