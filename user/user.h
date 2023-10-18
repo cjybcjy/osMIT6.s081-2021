@@ -24,6 +24,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int trace(int);//add a prototype for the system call
+int sysinfo(int);
 
 // ulib.c
 int stat(const char*, struct stat*);
