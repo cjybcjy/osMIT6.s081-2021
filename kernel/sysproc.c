@@ -121,7 +121,7 @@ sys_sysinfo(void) {
     //construct in kernel first
     struct sysinfo s;
     s.freemem = kfreemem();
-    s.nproc = unused_procmem();
+    s.nproc = used_procmem();
     //copy to user space
     if (copyout(my_proc->pagetable, p, (char*)&s, sizeof(s)) < 0) {
         return -1;

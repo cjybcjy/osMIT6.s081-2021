@@ -660,7 +660,7 @@ procdump(void)
 }
 
 uint64
-unused_procmem(void)
+used_procmem(void)
 {   struct proc *p;
     uint64 count = 0;
     for (p = proc; p < &proc[NPROC]; p++) {
