@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sysinfo.h"
 
 uint64
 sys_exit(void)
@@ -108,4 +109,22 @@ uint64 sys_trace(void)
     (myproc()->tracemask) |= trace_sys_mask; /*Bitwise OR with trace_sys_mask. This means that if the user wishes to trace a new system call,
      the corresponding bit of the system call in tracemask is set.*/
      return 0;
+}
+
+uint64
+sys_sysinfo(void) {
+    struct proc *my_proc = myproc();
+    uint64 p;
+    if (argaddr(0, &p) < 0) {// &P = argraw(0) = p->trapframe->a0;
+        return -1;
+    }
+    //construct in kernel first
+    struct sysinfo s;
+    s.freemem = kfreemem();
+    s.nproc = unused_procmem();
+    //copy to user space
+    if (copyout(my_proc->pagetable, p, (char*)&s, sizeof(s)) < 0) {
+        return -1;
+    }
+    return 0;
 }

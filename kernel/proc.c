@@ -659,7 +659,7 @@ procdump(void)
   }
 }
 
-void
+uint64
 unused_procmem(void)
 {   struct proc *p;
     uint64 count = 0;
