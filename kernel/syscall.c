@@ -169,7 +169,6 @@ syscall(void)
     struct proc *p = myproc();//Gets the struct pointer of the currently executing process
 
     num = p->trapframe->a7;//Retrieve the current system call number
-    printf("%d: syscall %s,  NELEM(syscalls): %d, syscalls[num]: %p\n", p->pid, sysnames[num], NELEM(syscalls), syscalls[num]);
     if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {/*This condition checks whether the system call number is valid. 
                                 It must be greater than 0, less than the number of elements in the syscalls array, 
                                 and the corresponding function pointer must not be null.*/
