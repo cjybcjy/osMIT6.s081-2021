@@ -130,7 +130,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 [SYS_trace]   sys_trace, //This array provides a lookup table for the different system calls
-[SYS_sysinfo]   sys_trace, 
+[SYS_sysinfo]   sys_sysinfo, 
 };
 
 static char *sysnames[] = {
