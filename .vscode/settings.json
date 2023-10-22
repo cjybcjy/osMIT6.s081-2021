@@ -18,6 +18,7 @@
         "tuple": "c",
         "ostream": "c",
         "sysinfo.h": "c",
-        "syscall.h": "c"
+        "syscall.h": "c",
+        "defs.h": "c"
     }
 }

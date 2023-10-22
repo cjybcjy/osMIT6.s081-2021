@@ -432,3 +432,37 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
+
+
+//recursive helper
+void vmprint_helper(pagetable_t pagetable, int depth)
+{
+    static char* indent[] = {
+        "",
+        "..",
+        ".. ..",
+        ".. .. .."
+    };
+    if (depth <= 0 || depth > 4) {
+        panic("vmprint_helper: depth not in {1, 2, 3}");
+    }
+    //there are 2^9 = 512 PTES in a page table
+    for (int i =0; i < 512; i++) {
+        pte_t pte = pagetable[i];
+        if (pte & PTE_V) {
+            printf("%s%d: pte %p pa %p\n", indent[depth], i, pte, PTE2PA(pte));
+            if((pte & (PTE_R|PTE_W|PTE_X)) == 0) {// point to a lower-level page table
+            uint64 child = PTE2PA(pte);
+            vmprint_helper((pagetable_t)child, depth + 1);// recursive depth++
+            }
+        }
+    }
+}
+
+
+
+// A simple driver function that prints the vaild address of a page table
+void vmprint(pagetable_t pagetable) {
+    printf("page table %p\n", pagetable);
+    vmprint_helper(pagetable, 1);
+}
