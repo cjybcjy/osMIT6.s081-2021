@@ -1,0 +1,23 @@
+1. Which other xv6 system call(s) could be made faster using this shared page? Explain how.
+
+(1)read and write System Calls:
+The read and write system calls involve copying data between user space and kernel space. 
+Typically, data is copied from a user-space buffer to a kernel-space buffer (or vice versa).
+With a shared page, the data could potentially be accessed directly,
+eliminating the need for data copying and thereby speeding up these system calls. 
+
+(2)fork System Call:
+The fork system call creates a new process by copying the entire memory space of the current process.
+A shared page mechanism could potentially optimize this process by allowing shared memory between 
+the parent and child processes, thus reducing the amount of memory that needs to be copied.
+
+(3)exec System Call:
+The exec system call loads a new program into a process's memory space. 
+If the program data could be mapped into a shared page, it might reduce the amount of data copying 
+required to load the program, thereby speeding up the exec system call.
+
+2. Explain the output of vmprint in terms of Fig 3-4 from the text. What does page 0 contain? 
+What is in page 2? When running in user mode, could the process read/write the memory mapped by page 1? 
+What does the third to last page contain?
+The R(readable), W(writable), and X(executable) tag bits of a PTE 
+that points to the next page table are all zero
