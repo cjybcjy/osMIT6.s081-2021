@@ -335,7 +335,7 @@ sfence_vma()
 #define PGSIZE 4096 // bytes per page
 #define PGSHIFT 12  // bits of offset within a page
 
-#define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1))
+#define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1))//To ensure that they are multiples of the page size (PGSIZE)
 #define PGROUNDDOWN(a) (((a)) & ~(PGSIZE-1))
 
 #define PTE_V (1L << 0) // valid
@@ -364,3 +364,13 @@ sfence_vma()
 
 typedef uint64 pte_t;
 typedef uint64 *pagetable_t; // 512 PTEs
+
+//The GCC compiler stores the frame pointer (fp) of the currently executing function in the register s0
+//This function uses in-line assembly to read s0.
+static inline uint64
+r_fp()
+    {
+    uint64 x;
+    asm volatile("mv %0, s0" : "=r" (x) );
+    return x;
+    }
