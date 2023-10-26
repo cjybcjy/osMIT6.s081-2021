@@ -368,7 +368,7 @@ typedef uint64 *pagetable_t; // 512 PTEs
 //The GCC compiler stores the frame pointer (fp) of the currently executing function in the register s0
 //This function uses in-line assembly to read s0.
 static inline uint64
-r_fp()
+r_fp() //read the current frame pointer
     {
     uint64 x;
     asm volatile("mv %0, s0" : "=r" (x) );
