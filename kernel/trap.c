@@ -48,7 +48,7 @@ usertrap(void)
   struct proc *p = myproc();
   
   // save user program counter.
-  p->trapframe->epc = r_sepc();
+  p->trapframe->epc = r_sepc();//saved process's pc
   
   if(r_scause() == 8){
     // system call
@@ -80,10 +80,10 @@ usertrap(void)
   if(which_dev == 2){//the CPU is abandoned and other processes are allowed to run
     if (p->intervel) {
         if (p->ticks == p->intervel) {
-            *p->pretrapframe = *p->trapframe;
+            *p->pretrapframe = *p->trapframe;//epc saved
             p->trapframe->epc = p->handler;
         }
-        p->ticks++;
+        p->ticks++;//prevent re-entrant calls to the handler
     }
     yield();
   }

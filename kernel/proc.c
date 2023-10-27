@@ -502,7 +502,7 @@ sched(void)
 
   intena = mycpu()->intena;
   swtch(&p->context, &mycpu()->context);
-  mycpu()->intena = intena;
+  mycpu()->intena = intena; //state of the interrupt remains unchanged after switching contexts.
 }
 
 // Give up the CPU for one scheduling round.
