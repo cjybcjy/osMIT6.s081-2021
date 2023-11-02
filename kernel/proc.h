@@ -1,3 +1,6 @@
+#include "spinlock.h"
+typedef uint64 *pagetable_t; // 512 PTEs
+
 // Saved registers for kernel context switches.
 struct context {
   uint64 ra;

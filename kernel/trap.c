@@ -2,13 +2,13 @@
 #include "param.h"
 #include "memlayout.h"
 #include "riscv.h"
-#include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
 
 struct spinlock tickslock;
 uint ticks;
-
+extern int cowhandler();
+extern pte_t *walk();
 extern char trampoline[], uservec[], userret[];
 
 // in kernelvec.S, calls kerneltrap().
@@ -65,22 +65,32 @@ usertrap(void)
     intr_on();
 
     syscall();
-  } else if((which_dev = devintr()) != 0){
+     } else if (r_scause() == 15) { //15->store/AMO page fault
+    //see Volume II: RISC-V Privileged Architectures V20211203 Page 70
+    uint64 va = r_stval();
+    if (va >= p->sz) {
+        p->killed = 1;
+    }
+    int ret = cowhandler(p->pagetable, va);
+    if (ret != 0) {
+        p->killed = 1;
+    } 
+    }else if((which_dev = devintr()) != 0){
     // ok
-  } else {
-    printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
-    printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
-    p->killed = 1;
-  }
+    } else {
+        printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
+        printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
+        p->killed = 1;
+    }
 
-  if(p->killed)
-    exit(-1);
+    if(p->killed)
+        exit(-1);
 
-  // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2)
-    yield();
+    // give up the CPU if this is a timer interrupt.
+    if(which_dev == 2)
+        yield();
 
-  usertrapret();
+    usertrapret();
 }
 
 //
@@ -218,3 +228,34 @@ devintr()
   }
 }
 
+
+// check if it's a copy-on-write page fault
+// and handle it.
+int
+cowhandler(pagetable_t pagetable, uint64 va)
+{
+    char *mem;
+    if (va >= MAXVA) {//check va
+        return -1;
+    }
+    pte_t *pte = walk(pagetable, va, 0);
+    if (pte == 0) {// check pte
+        return -1;
+    }
+    if ((*pte & PTE_COW) == 0 || (*pte & PTE_U) == 0 || (*pte & PTE_V) == 0) {//check cow
+        return -1;
+    }
+    if ((mem = kalloc()) == 0){
+        return -1;
+    }
+
+    // old physical address
+    uint64 pa = PTE2PA(*pte);
+    // copy old pa to new pa
+    memmove((char*)mem, (char*)pa, PGSIZE);
+    kfree((void*)pa);//reduce the reference count of the physical page
+    uint flags = PTE_FLAGS(*pte);
+    *pte = (PA2PTE(mem) | flags | PTE_W); //change pa & set PTE_W  to 1
+    *pte &= ~PTE_COW;//set PTE_COW to 0
+    return 0;
+}
