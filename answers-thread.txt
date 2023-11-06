@@ -1,0 +1,12 @@
+Why are there missing keys with 2 threads, but not with 1 thread? 
+Identify a sequence of events with 2 threads that can lead to a key being missing.
+A: because of race-condition
+设置k1、k2属于同个bucket
+1. thread 1: 尝试设置k1
+2. thread 1: 发现k1不在，尝试在bucket末尾插入k1
+3. 线程切换：scheduler切换到thread 2
+4. thread 2: 尝试设置k2
+5. thread 2: 发现k2不在，尝试在bucket末尾插入k2
+6. 分配entry，在桶末尾插入k2
+7. 线程切换：scheduler切换到thread 1
+8. 分配entry，在桶末尾插入k1,未意识到k2存在，覆盖了k2

@@ -36,11 +36,12 @@ insert(int key, int value, struct entry **p, struct entry *n)
   *p = e;
 }
 
+pthread_mutex_t lock[NBUCKET];
 static 
 void put(int key, int value)
 {
   int i = key % NBUCKET;
-
+  pthread_mutex_lock(&lock[i]);
   // is the key already present?
   struct entry *e = 0;
   for (e = table[i]; e != 0; e = e->next) {
@@ -54,20 +55,21 @@ void put(int key, int value)
     // the new is new.
     insert(key, value, &table[i], table[i]);
   }
+   pthread_mutex_unlock(&lock[i]);
 
 }
 
 static struct entry*
 get(int key)
 {
-  int i = key % NBUCKET;
+  int i = key % NBUCKET;//Calculate the hash value that determines in which bucket the element should be stored.
 
-
-  struct entry *e = 0;
-  for (e = table[i]; e != 0; e = e->next) {
+  pthread_mutex_lock(&lock[i]);//Locking the mutex
+  struct entry *e = 0;// A pointer to struct entry is initialized
+  for (e = table[i]; e != 0; e = e->next) {//traverse the list
     if (e->key == key) break;
   }
-
+  pthread_mutex_unlock(&lock[i]);
   return e;
 }
 
@@ -104,6 +106,9 @@ main(int argc, char *argv[])
   pthread_t *tha;
   void *value;
   double t1, t0;
+  for (int i = 0; i < NBUCKET; i++) {//inite lock
+    pthread_mutex_init(&lock[i], NULL);
+  }
 
 
   if (argc < 2) {

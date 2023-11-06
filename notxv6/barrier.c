@@ -9,17 +9,19 @@ static int round = 0;
 
 struct barrier {
   pthread_mutex_t barrier_mutex;
-  pthread_cond_t barrier_cond;
+  pthread_cond_t barrier_cond;//Condition variable used to block and wake up the thread waiting for the barrier
   int nthread;      // Number of threads that have reached this round of the barrier
   int round;     // Barrier round
+  //This counter helps the barrier to distinguish between different synchronization points, 
+  //ensuring that threads do not collide with each other because they are woken up in the wrong round.
 } bstate;
 
 static void
 barrier_init(void)
 {
-  assert(pthread_mutex_init(&bstate.barrier_mutex, NULL) == 0);
-  assert(pthread_cond_init(&bstate.barrier_cond, NULL) == 0);
-  bstate.nthread = 0;
+  assert(pthread_mutex_init(&bstate.barrier_mutex, NULL) == 0);//Ensure that the mutex is initialized successfully.
+  assert(pthread_cond_init(&bstate.barrier_cond, NULL) == 0);//Make sure the condition variable is initialized successfully
+  bstate.nthread = 0;//Initialize the state of the synchronization barrier
 }
 
 static void 
@@ -30,7 +32,17 @@ barrier()
   // Block until all threads have called barrier() and
   // then increment bstate.round.
   //
-  
+  pthread_mutex_lock(&bstate.barrier_mutex);
+  if (++bstate.nthread < nthread) {
+    //This function is used to wait on a condition variable while releasing the associated mutex. 
+    //When the function wakes up, the function reacquires the mutex and returns.
+    pthread_cond_wait(&bstate.barrier_cond, &bstate.barrier_mutex);
+  } else {
+    bstate.nthread = 0;
+    bstate.round++;
+    pthread_cond_broadcast(&bstate.barrier_cond);//wakes up
+  }
+  pthread_mutex_unlock(&bstate.barrier_mutex);
 }
 
 static void *

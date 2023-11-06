@@ -1,0 +1,20 @@
+{
+    "files.associations": {
+        "*.lds": "bat",
+        "random": "c",
+        "syscall.h": "c",
+        "defs.h": "c",
+        "exception": "c",
+        "new": "c",
+        "proc.h": "c",
+        "types.h": "c",
+        "sleeplock.h": "c",
+        "spinlock.h": "c",
+        "*.tcc": "c",
+        "deque": "c",
+        "string": "c",
+        "unordered_map": "c",
+        "vector": "c",
+        "ostream": "c"
+    }
+}
