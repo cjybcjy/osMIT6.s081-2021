@@ -137,12 +137,13 @@ holding(struct spinlock *lk)
 void
 push_off(void)
 {
-  int old = intr_get();
+  int old = intr_get();//Saves the current interrupt state
 
-  intr_off();
+  intr_off();//Turns off the interrupt for the current CPU
   if(mycpu()->noff == 0)
+  //When the topmost pop_off() call is called, the interrupt will be enabled again.
     mycpu()->intena = old;
-  mycpu()->noff += 1;
+  mycpu()->noff += 1;// track how many times push off was called.
 }
 
 void

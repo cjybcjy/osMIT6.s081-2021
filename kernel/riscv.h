@@ -287,8 +287,9 @@ intr_off()
 static inline int
 intr_get()
 {
-  uint64 x = r_sstatus();
+  uint64 x = r_sstatus();//Read the state of the current processor
   return (x & SSTATUS_SIE) != 0;
+  //SSTATUS_SIE is a bitmask usually defined as the bit to enable or disable device interrupts.
 }
 
 static inline uint64
