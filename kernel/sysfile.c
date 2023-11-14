@@ -179,10 +179,17 @@ if(argstr(0, target, MAXPATH) < 0 || argstr(1, path, MAXPATH) < 0 ) {
     return -1;
 }
 
+
+//It is sufficient to create a struct inode from the virtual address 
+//and store the target address in the inode's disk block.
+
+
+//filesystem operations are not performed directly but in a cache file. 
+//Submit actions for execution after they are added
 begin_op();//Start a filesystem operation
 
 //The soft-linked file is added to the parent directory of new path 
-if ((fdir = nameiparent(path, name)) == 0) {
+if ((fdir = nameiparent(path, name))== 0) {
       end_op();
     return -1;
 }
@@ -403,7 +410,7 @@ sys_open(void)
     }
 }
  
-//Not soft connection -> normal judgment
+
 
   if(ip->type == T_DEVICE && (ip->major < 0 || ip->major >= NDEV)){//Check the validity of device files
     iunlockput(ip);
@@ -412,14 +419,13 @@ sys_open(void)
   }
 
   if((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0){//Allocates a new file structure and file descriptor
-    if(f)//If f is not NULL (that is, the file struct was allocated but the file descriptor failed)
+    if(f)
       fileclose(f);
     iunlockput(ip);
     end_op();
     return -1;
   }
 
-//The type and properties of the file structure are set according to the inode type.
   if(ip->type == T_DEVICE){
     f->type = FD_DEVICE;
     f->major = ip->major;
