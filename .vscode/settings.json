@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "*.lds": "bat",
+        "stat.h": "c",
+        "types.h": "c",
+        "file.h": "c",
+        "typeinfo": "c"
+    }
+}

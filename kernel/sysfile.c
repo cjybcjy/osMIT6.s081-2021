@@ -117,35 +117,37 @@ sys_fstat(void)
 
 // Create the path new as a link to the same inode as old.
 uint64
-sys_link(void)
+sys_link(void)//hard link
 {
   char name[DIRSIZ], new[MAXPATH], old[MAXPATH];
   struct inode *dp, *ip;
 
-  if(argstr(0, old, MAXPATH) < 0 || argstr(1, new, MAXPATH) < 0)
+  if(argstr(0, old, MAXPATH) < 0 || argstr(1, new, MAXPATH) < 0)//get old path and new path
     return -1;
 
   begin_op();
-  if((ip = namei(old)) == 0){
+  if((ip = namei(old)) == 0){//The inode corresponding to old
     end_op();
     return -1;
   }
 
   ilock(ip);
-  if(ip->type == T_DIR){
+  if(ip->type == T_DIR){//Hard links cannot point to directories
     iunlockput(ip);
     end_op();
     return -1;
   }
 
   ip->nlink++;
-  iupdate(ip);
+  iupdate(ip);//Update the inode information to disk
   iunlock(ip);
 
-  if((dp = nameiparent(new, name)) == 0)
+  if((dp = nameiparent(new, name)) == 0)//Retrieve the parent inode of the new path
     goto bad;
   ilock(dp);
   if(dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0){
+    //Check whether the parent directory of new path inode (dp) and the target file inode (ip) are on the same device. 
+    //Try to create a new directory entry in the parent directory (dp) that is linked to the inode number of the target file
     iunlockput(dp);
     goto bad;
   }
@@ -164,6 +166,64 @@ bad:
   end_op();
   return -1;
 }
+
+uint64 sys_symlink(void)
+{
+//Two character arrays are initialized to hold the path strings 
+char name[DIRSIZ], path[MAXPATH], target[MAXPATH];
+memset(path, 0, MAXPATH);
+memset(target, 0, MAXPATH);
+struct inode *sym, *fdir;
+
+if(argstr(0, target, MAXPATH) < 0 || argstr(1, path, MAXPATH) < 0 ) {
+    return -1;
+}
+
+begin_op();//Start a filesystem operation
+
+//The soft-linked file is added to the parent directory of new path 
+if ((fdir = nameiparent(path, name)) == 0) {
+      end_op();
+    return -1;
+}
+
+ilock(fdir);
+//Preventing the creation of soft links on existing files or directories is an important check in filesystems 
+//to prevent data overwriting and to maintain consistency.
+if ((sym = dirlookup(fdir, name, 0)) != 0) {//path is aready exist
+    iunlockput(fdir);
+    end_op();
+    return -1;
+}
+
+if ((sym = ialloc(fdir->dev, T_SYMLINK)) == 0) {//Allocate an inode on device dev.
+    panic("create: ialloc");
+}
+
+ilock (sym);
+sym->nlink = 1;
+iupdate(sym);
+
+if (dirlink(fdir, name, sym->inum) < 0) { 
+    panic("create: dirlink");
+}
+
+iupdate(fdir);
+
+if ((writei(sym, 0, (uint64)target, 0, MAXPATH)) < 0) {//Write the target string to the symlink file
+    panic("symlink: writei");
+}
+
+iupdate(sym);
+
+iunlockput(sym);
+iunlockput(fdir);
+
+end_op();
+return 0;
+}
+
+
 
 // Is the directory dp empty except for "." and ".." ?
 static int
@@ -297,7 +357,7 @@ sys_open(void)
 
   begin_op();
 
-  if(omode & O_CREATE){
+  if(omode & O_CREATE){//if the open mode contains CREATE
     ip = create(path, T_FILE, 0, 0);
     if(ip == 0){
       end_op();
@@ -309,27 +369,57 @@ sys_open(void)
       return -1;
     }
     ilock(ip);
-    if(ip->type == T_DIR && omode != O_RDONLY){
+    if(ip->type == T_DIR && omode != O_RDONLY){//If the file is a directory and the open mode is not read-only
       iunlockput(ip);
       end_op();
       return -1;
     }
   }
 
-  if(ip->type == T_DEVICE && (ip->major < 0 || ip->major >= NDEV)){
+  // check if it's a symbolic link && O_NOFOLLOW is not added
+ int depth = 0;
+ while (ip->type == T_SYMLINK && !(omode & O_NOFOLLOW)) {
+    char target[MAXPATH];
+    memset(target, 0, MAXPATH);
+    
+    if ((readi(ip, 0, (uint64)target, 0, MAXPATH)) < 0) {
+        iunlockput(ip);
+        end_op();
+        return -1;
+    }
+    iunlockput(ip);
+
+    if ((ip = namei(target)) == 0) {//if symlink isn't exist
+        end_op();
+        return -1;
+    }
+
+    ilock(ip);//Lock the newly found inode
+    depth++;
+    if (depth > 10) {
+       iunlockput(ip);
+       end_op();
+       return -1; 
+    }
+}
+ 
+//Not soft connection -> normal judgment
+
+  if(ip->type == T_DEVICE && (ip->major < 0 || ip->major >= NDEV)){//Check the validity of device files
     iunlockput(ip);
     end_op();
     return -1;
   }
 
-  if((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0){
-    if(f)
+  if((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0){//Allocates a new file structure and file descriptor
+    if(f)//If f is not NULL (that is, the file struct was allocated but the file descriptor failed)
       fileclose(f);
     iunlockput(ip);
     end_op();
     return -1;
   }
 
+//The type and properties of the file structure are set according to the inode type.
   if(ip->type == T_DEVICE){
     f->type = FD_DEVICE;
     f->major = ip->major;
@@ -341,7 +431,7 @@ sys_open(void)
   f->readable = !(omode & O_WRONLY);
   f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
 
-  if((omode & O_TRUNC) && ip->type == T_FILE){
+  if((omode & O_TRUNC) && ip->type == T_FILE){//If the mode is truncated and the file type is a regular file
     itrunc(ip);
   }
 
@@ -484,3 +574,5 @@ sys_pipe(void)
   }
   return 0;
 }
+
+

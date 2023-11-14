@@ -361,8 +361,8 @@ iput(struct inode *ip)
 void
 iunlockput(struct inode *ip)
 {
-  iunlock(ip);
-  iput(ip);
+  iunlock(ip);//Unlock the incoming inode
+  iput(ip);//Release or decrease the reference count on the inode
 }
 
 // Inode content
@@ -479,7 +479,7 @@ itrunc(struct inode *ip)
     bfree(ip->dev, ip->addrs[NDIRECT + 1]);
     ip->addrs[NDIRECT + 1] = 0; //clean 
   }
-  ip->size = 0;
+  ip->size = 0;//The inode size is set to 0
   iupdate(ip);
 }
 
@@ -579,7 +579,7 @@ dirlookup(struct inode *dp, char *name, uint *poff)
   uint off, inum;
   struct dirent de;
 
-  if(dp->type != T_DIR)
+  if(dp->type != T_DIR)// only directories can contain directory entries
     panic("dirlookup not DIR");
 
   for(off = 0; off < dp->size; off += sizeof(de)){
@@ -590,6 +590,7 @@ dirlookup(struct inode *dp, char *name, uint *poff)
     if(namecmp(name, de.name) == 0){
       // entry matches path element
       if(poff)
+      //poff is used to store the offset of the found directory entry
         *poff = off;
       inum = de.inum;
       return iget(dp->dev, inum);
@@ -649,23 +650,24 @@ skipelem(char *path, char *name)
   char *s;
   int len;
 
-  while(*path == '/')
+  while(*path == '/')//Skip all consecutive slashes at the beginning of the path (/)
     path++;
   if(*path == 0)
     return 0;
   s = path;
   while(*path != '/' && *path != 0)
     path++;
-  len = path - s;
+  len = path - s;//Calculate the length of the path element
   if(len >= DIRSIZ)
     memmove(name, s, DIRSIZ);
   else {
     memmove(name, s, len);
     name[len] = 0;
   }
+  //The consecutive slashes are again skipped and ready to point to the next path element
   while(*path == '/')
     path++;
-  return path;
+  return path;//A pointer to the remaining path (or next element)
 }
 
 // Look up and return the inode for a path name.
@@ -679,6 +681,7 @@ namex(char *path, int nameiparent, char *name)
 
   if(*path == '/')
     ip = iget(ROOTDEV, ROOTINO);
+//If the path is an absolute path (starting with /), the search begins at the root directory
   else
     ip = idup(myproc()->cwd);
 
